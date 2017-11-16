@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import with_statement
 import copy
 
 from django.contrib.auth import get_user_model
@@ -9,15 +8,16 @@ from django.http import Http404, HttpResponseRedirect, QueryDict
 from django.test.utils import override_settings
 
 from cms.api import create_page, create_title, publish_page, add_plugin
-from cms.cms_menus import CMSMenu
 from cms.forms.utils import update_site_and_page_choices
 from cms.exceptions import LanguageError
-from cms.models import Title, EmptyTitle
+from cms.models import Page, Title, EmptyTitle
 from cms.test_utils.testcases import (CMSTestCase,
                                       URL_CMS_PAGE_CHANGE_LANGUAGE, URL_CMS_PAGE_PUBLISH)
 from cms.test_utils.util.mock import AttributeObject
-from cms.utils import get_cms_setting
+from cms.utils.conf import get_cms_setting
 from cms.utils.conf import get_languages
+
+from menus.menu_pool import menu_pool
 
 
 TEMPLATE_NAME = 'tests/rendering/base.html'
@@ -137,43 +137,49 @@ class MultilingualTestCase(CMSTestCase):
         placeholder = page.placeholders.all()[0]
         add_plugin(placeholder, "TextPlugin", TESTLANG2, body="test")
         add_plugin(placeholder, "TextPlugin", TESTLANG, body="test")
-        self.assertEqual(placeholder.cmsplugin_set.filter(language=TESTLANG2).count(), 1)
-        self.assertEqual(placeholder.cmsplugin_set.filter(language=TESTLANG).count(), 1)
+        self.assertEqual(placeholder.get_plugins(language=TESTLANG2).count(), 1)
+        self.assertEqual(placeholder.get_plugins(language=TESTLANG).count(), 1)
         user = get_user_model().objects.create_superuser('super', 'super@django-cms.org', 'super')
         page = publish_page(page, user, TESTLANG)
         page = publish_page(page, user, TESTLANG2)
         public = page.publisher_public
         placeholder = public.placeholders.all()[0]
-        self.assertEqual(placeholder.cmsplugin_set.filter(language=TESTLANG2).count(), 1)
-        self.assertEqual(placeholder.cmsplugin_set.filter(language=TESTLANG).count(), 1)
+        self.assertEqual(placeholder.get_plugins(language=TESTLANG2).count(), 1)
+        self.assertEqual(placeholder.get_plugins(language=TESTLANG).count(), 1)
 
     def test_hide_untranslated(self):
         TESTLANG = get_primary_language()
         TESTLANG2 = get_secondary_language()
         page = create_page("mlpage-%s" % TESTLANG, "nav_playground.html", TESTLANG)
         create_title(TESTLANG2, "mlpage-%s" % TESTLANG2, page, slug=page.get_slug())
-        page2 = create_page("mlpage-2-%s" % TESTLANG, "nav_playground.html", TESTLANG, parent=page)
         page.publish(TESTLANG)
         page.publish(TESTLANG2)
+        page2 = create_page("mlpage-2-%s" % TESTLANG, "nav_playground.html", TESTLANG, parent=page)
         page2.publish(TESTLANG)
 
-        menu = CMSMenu()
         lang_settings = copy.deepcopy(get_cms_setting('LANGUAGES'))
 
         request_1 = self.get_request('/%s/' % TESTLANG, TESTLANG)
         request_2 = self.get_request('/%s/' % TESTLANG2, TESTLANG2)
 
+        request_1_menu_renderer = menu_pool.get_renderer(request_1)
+        request_2_menu_renderer = menu_pool.get_renderer(request_2)
+
         lang_settings[1][1]['hide_untranslated'] = False
         with self.settings(CMS_LANGUAGES=lang_settings):
-            list_1 = [node.id for node in menu.get_nodes(request_1)]
-            list_2 = [node.id for node in menu.get_nodes(request_2)]
+            request_1_nodes = request_1_menu_renderer.get_menu('CMSMenu').get_nodes(request_1)
+            request_2_nodes = request_2_menu_renderer.get_menu('CMSMenu').get_nodes(request_2)
+            list_1 = [node.id for node in request_1_nodes]
+            list_2 = [node.id for node in request_2_nodes]
             self.assertEqual(list_1, list_2)
             self.assertEqual(len(list_1), 2)
 
         lang_settings[1][1]['hide_untranslated'] = True
         with self.settings(CMS_LANGUAGES=lang_settings):
-            list_1 = [node.id for node in menu.get_nodes(request_1)]
-            list_2 = [node.id for node in menu.get_nodes(request_2)]
+            request_1_nodes = request_1_menu_renderer.get_menu('CMSMenu').get_nodes(request_1)
+            request_2_nodes = request_2_menu_renderer.get_menu('CMSMenu').get_nodes(request_2)
+            list_1 = [node.id for node in request_1_nodes]
+            list_2 = [node.id for node in request_2_nodes]
             self.assertNotEqual(list_1, list_2)
             self.assertEqual(len(list_2), 1)
             self.assertEqual(len(list_1), 2)
@@ -196,6 +202,9 @@ class MultilingualTestCase(CMSTestCase):
             page3.publish('de')
             page3.publish('en')
             page4.publish('de')
+
+            Page.set_homepage(page)
+
             response = self.client.get("/en/")
             self.assertRedirects(response, "/de/")
             response = self.client.get("/en/page2/")
@@ -239,6 +248,8 @@ class MultilingualTestCase(CMSTestCase):
             def get_host():
                 return 'testserver'
 
+            self.get_request()
+
             request = AttributeObject(
                 GET=QueryDict('language=x-elvish'),
                 POST=QueryDict(''),
@@ -261,6 +272,8 @@ class MultilingualTestCase(CMSTestCase):
         to English
         '''
         page = create_page("page1", "nav_playground.html", "en")
+        page_path = page.get_path()
+
         with self.settings(TEMPLATE_CONTEXT_PROCESSORS=[],
             CMS_LANGUAGES={
                 1:[
@@ -273,7 +286,7 @@ class MultilingualTestCase(CMSTestCase):
             from cms.views import details
 
             def get_path():
-                return '/'
+                return page_path
 
             def is_secure():
                 return False
@@ -286,7 +299,7 @@ class MultilingualTestCase(CMSTestCase):
                 GET=QueryDict('language=x-elvish'),
                 POST=QueryDict(''),
                 session={},
-                path='/',
+                path=page_path,
                 current_page=None,
                 method='GET',
                 COOKIES={},
@@ -297,7 +310,7 @@ class MultilingualTestCase(CMSTestCase):
                 get_host=get_host,
             )
 
-            response = details(request, '')
+            response = details(request, page_path)
             self.assertTrue(isinstance(response, HttpResponseRedirect))
 
     def test_language_fallback(self):
@@ -306,6 +319,9 @@ class MultilingualTestCase(CMSTestCase):
         """
         from cms.views import details
         p1 = create_page("page", "nav_playground.html", "en", published=True)
+
+        Page.set_homepage(p1)
+
         request = self.get_request('/de/', 'de')
         response = details(request, p1.get_path())
         self.assertEqual(response.status_code, 302)
@@ -379,7 +395,7 @@ class MultilingualTestCase(CMSTestCase):
                 ]},
             ):
             try:
-                update_site_and_page_choices(lang='en-us')
+                update_site_and_page_choices(language='en-us')
             except LanguageError:
                 self.fail("LanguageError raised")
 
@@ -392,7 +408,8 @@ class MultilingualTestCase(CMSTestCase):
         # add wrong plugin language
         add_plugin(ph_en, "TextPlugin", "ru", body="I'm the second")
         page.publish('en')
+        endpoint = page.get_absolute_url() + '?' + get_cms_setting('CMS_TOOLBAR_URL__EDIT_ON')
         superuser = self.get_superuser()
         with self.login_user_context(superuser):
-            response = self.client.get('/en/?%s' % get_cms_setting('CMS_TOOLBAR_URL__EDIT_ON'))
+            response = self.client.get(endpoint)
             self.assertEqual(response.status_code, 200)

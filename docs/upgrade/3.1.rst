@@ -24,17 +24,17 @@ What's new in 3.1
 Switch from MPTT to MP
 ======================
 
-Since django CMS 2.0 we have relied on MPTT (Modified Preorder Tree Traversal) for efficiently
+Since django CMS 2.0 we have relied on MPTT (Modified Pre-order Tree Traversal) for efficiently
 handling tree structures in the database.
 
 In 3.1, `Django MPTT <https://github.com/django-mptt/django-mptt>`_ has been replaced by
-`django-treebeard <https://github.com/tabo/django-treebeard>`_, to improve performance and
+`django-treebeard <https://github.com/django-treebeard/django-treebeard>`_, to improve performance and
 reliability.
 
 Over the years MPTT has proved not to be fast enough for big tree operations (>1000 pages); tree
 corruption, because of transactional errors, has also been a problem.
 
-django-treebeard uses MP (Materialized Path). MP is more efficient and has more error resistance
+django-treebeard uses MP (Materialised Path). MP is more efficient and has more error resistance
 then MPTT. It should make working with and using django CMS better - faster and reliable.
 
 Other than this, end users should not notice any changes.
@@ -49,7 +49,7 @@ Other than this, end users should not notice any changes.
     While most of the low-level interface is very similar between ``django-mptt`` and
     ``django-treebeard`` they are not exactly the same. If any custom code needs to make use of the
     low-level interfaces of the page or plugins tree, please see the `django-treebeard
-    documentation <https://tabo.pe/projects/django-treebeard/docs/2.0/>`_ for information
+    documentation <http://django-treebeard.readthedocs.io/en/latest/>`_ for information
     on how to use equivalent calls in ``django-treebeard``.
 
 .. note:: Handling plugin data migrations
@@ -96,6 +96,76 @@ Action required
 
 To install South along with django CMS use ``pip install django-cms[south]``.
 
+Changes to PlaceholderAdmin.add_plugin
+======================================
+
+Historically, when a plugin was added to django CMS, a POST request was made to
+the ``PlaceholderAdmin.add_plugin`` endpoint (and going back into very ancient
+history before ``PlaceholderAdmin`` existed, it was ``PageAdmin.add_plugin``).
+This would create an instance of ``CMSPlugin``, but not an instance of the
+actual plugin model itself. It would then let the user agent edit the created
+plugin, which when saved would put the database back in to a consistent state,
+with a plugin instance connected to the otherwise empty and meaningless
+``CMSPlugin``.
+
+In some cases, "ghost plugins" would be created, if the process of creating the
+plugin instance failed or were interrupted, for example by the browser window's
+being closed.
+
+This would leave orphaned ``CMSPlugin`` instances in the database without any
+data. This could result pages not working at all, due to the resulting database
+inconsistencies.
+
+This issue has now been solved. Calling ``CMSPluginBase.add_plugin`` with a
+GET request now serves the form for creating a new instance of a plugin. Then on
+submitting that form via POST, the plugin is created in its entirety, ensuring
+a consistent database and an end to ghost plugins.
+
+However, to solve it some backwards incompatible changes to **non-documented
+APIs** that developers might have used have had to be made.
+
+CMSPluginBase permission hooks
+------------------------------
+
+Until now, ``CMSPluginBase.has_delete_permission``,
+``CMSPluginBase.has_change_permission`` and
+``CMSPluginBase.has_add_permission`` were handled by a single method, which
+used an undocumented and unreliable property on ``CMSPluginBase`` instances
+(or subclasses thereof) to handle permission management.
+
+In 3.1, ``CMSPluginBase.has_add_permission`` is its own method that implements
+proper permission checking for adding plugins.
+
+If you want to work with those APIs, see the `Django documentation`_ for more
+on the permission methods.
+
+
+CMSPluginBase.get_form
+----------------------
+
+Prior to 3.1, this method would only ever be called with an actual instance
+available.
+
+As of 3.1, this method will be called without an instance (the ``obj`` argument
+to the method will be ``None``) if the form is used to add a plugin, rather
+than editing it. Again, this is in line with how Django's ``ModelAdmin`` works.
+
+If you need access to the ``Placeholder`` object to which the plugin will be
+added, the ``request`` object is *guaranteed* to have a ``placeholder_id`` key
+in ``request.GET``, which is the primary key of the ``Placeholder`` object to
+which the plugin will be added. Similarly, ``plugin_language`` in
+``request.GET`` holds the language code of the plugin to be added.
+
+CMSPlugin.add_view
+------------------
+
+This method used to never be called, but as of 3.1 it will be. Should you need
+to hook into this method, you may want to use the
+``CMSPluginBase.add_view_check_request`` method to verify that a request made to
+this view is valid. This method will perform integrity and permission checks
+for the GET parameters of the request.
+
+
 Migrations moved
 ================
 
@@ -117,7 +187,7 @@ migration path from `MIGRATION_MODULES
 Plugins migrations moving process
 =================================
 
-Core plugins are being changeed to follow the new convention for the migration modules, starting
+Core plugins are being changed to follow the new convention for the migration modules, starting
 with **djangocms_text_ckeditor** 2.5 released together with django CMS 3.1.
 
 Action required
@@ -162,8 +232,6 @@ Toolbar API extension
 The toolbar API has been extended to permit more powerful use of it in future development,
 including the use of "clipboard-like" items.
 
-For an example of how this can be used, see the new
-`Aldryn Blueprint <https://github.com/aldryn/aldryn-blueprint/>`_ application.
 
 Per-namespace apphook configuration
 ===================================
@@ -188,13 +256,13 @@ Placeholder language fallback default to True
 ``language_fallback`` in :setting:`CMS_PLACEHOLDER_CONF` is ``True`` by default.
 
 
-New templatetags
-================
+New template tags
+=================
 
 ``render_model_add_block``
 --------------------------
 
-The family of :ref:`render_model <render_model_templatetags>` templatetags that allow Django
+The family of :ref:`render_model <render_model_templatetags>` template tags that allow Django
 developers to make any Django model editable in the frontend has been extended with
 :ttag:`render_model_add_block`, which can offer arbitrary markup as the *Edit* icon (rather than
 just an image as previously).
@@ -256,7 +324,7 @@ Settings update
   the new migration layout.
 * If migrating from Django 1.6 and below to Django 1.7, remove ``south`` from ``installed_apps``.
 * Eventually set ``language_fallback`` to ``False`` in :setting:`CMS_PLACEHOLDER_CONF` if you do
-  not want language fallback behavior for placeholders.
+  not want language fallback behaviour for placeholders.
 
 Update the database
 ===================
@@ -269,3 +337,6 @@ Update the database
   thus apply migrations to update your database::
 
     python manage.py migrate
+
+
+.. _Django documentation: https://docs.djangoproject.com/en/1.8/ref/contrib/admin/#django.contrib.admin.ModelAdmin.has_add_permission

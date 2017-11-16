@@ -31,12 +31,13 @@ def default(name):
 
 DEFAULTS = {
     'TEMPLATE_INHERITANCE': True,
+    'DEFAULT_X_FRAME_OPTIONS': constants.X_FRAME_OPTIONS_INHERIT,
+    'TOOLBAR_SIMPLE_STRUCTURE_MODE': True,
     'PLACEHOLDER_CONF': {},
     'PERMISSION': False,
     # Whether to use raw ID lookups for users when PERMISSION is True
     'RAW_ID_USERS': False,
     'PUBLIC_FOR': 'all',
-    'CONTENT_CACHE_DURATION': 60,
     'APPHOOKS': [],
     'TOOLBARS': [],
     'SITE_CHOICES_CACHE_KEY': 'CMS:site_choices',
@@ -58,20 +59,29 @@ DEFAULTS = {
     'TOOLBAR_ANONYMOUS_ON': True,
     'TOOLBAR_URL__EDIT_ON': 'edit',
     'TOOLBAR_URL__EDIT_OFF': 'edit_off',
-    'TOOLBAR_URL__BUILD': 'build',
+    'TOOLBAR_URL__BUILD': 'structure',
     'TOOLBAR_URL__DISABLE': 'toolbar_off',
     'ADMIN_NAMESPACE': 'admin',
     'APP_NAME': None,
-    'TOOLBAR_HIDE': False
+    'TOOLBAR_HIDE': False,
+    'INTERNAL_IPS': [],
+    'REQUEST_IP_RESOLVER': 'cms.utils.request_ip_resolvers.default_request_ip_resolver',
+    'PAGE_WIZARD_DEFAULT_TEMPLATE': constants.TEMPLATE_INHERITANCE_MAGIC,
+    'PAGE_WIZARD_CONTENT_PLUGIN': 'TextPlugin',
+    'PAGE_WIZARD_CONTENT_PLUGIN_BODY': 'body',
+    'PAGE_WIZARD_CONTENT_PLACEHOLDER': None,  # Use first placeholder it finds.
 }
 
 
 def get_cache_durations():
-    return {
-        'menus': getattr(settings, 'MENU_CACHE_DURATION', 60 * 60),
-        'content': get_cms_setting('CONTENT_CACHE_DURATION'),
+    """
+    Returns the setting: CMS_CACHE_DURATIONS or the defaults.
+    """
+    return getattr(settings, 'CMS_CACHE_DURATIONS', {
+        'menus': 60 * 60,
+        'content': 60,
         'permissions': 60 * 60,
-    }
+    })
 
 
 @default('CMS_MEDIA_ROOT')
@@ -95,7 +105,7 @@ def get_toolbar_url__edit_off():
 
 
 @default('CMS_TOOLBAR_URL__BUILD')
-def get_toolbar_url__build():
+def get_toolbar_url__structure():
     return get_cms_setting('TOOLBAR_URL__BUILD')
 
 
@@ -116,12 +126,9 @@ def get_templates():
         # valid templates directory. Here we mimick what the filesystem and
         # app_directories template loaders do
         prefix = ''
-        # Relative to TEMPLATE_DIRS for filesystem loader
+        # Relative to TEMPLATE['DIRS'] for filesystem loader
 
-        try:
-            path = settings.TEMPLATE_DIRS
-        except IndexError:
-            path = [template['DIRS'][0] for template in settings.TEMPLATES]
+        path = [template['DIRS'][0] for template in settings.TEMPLATES]
 
         for basedir in path:
             if tpldir.find(basedir) == 0:
@@ -139,7 +146,7 @@ def get_templates():
         config_path = os.path.join(tpldir, '__init__.py')
         # Try to load templates list and names from the template module
         # If module file is not present skip configuration and just dump the filenames as templates
-        if config_path:
+        if os.path.isfile(config_path):
             template_module = load_from_file(config_path)
             templates = [(os.path.join(prefix, data[0].strip()), data[1]) for data in template_module.TEMPLATES.items()]
         else:
@@ -147,7 +154,7 @@ def get_templates():
     else:
         templates = list(getattr(settings, 'CMS_TEMPLATES', []))
     if get_cms_setting('TEMPLATE_INHERITANCE'):
-        templates.append((constants.TEMPLATE_INHERITANCE_MAGIC, _(constants.TEMPLATE_INHERITANCE_LABEL)))
+        templates.append((constants.TEMPLATE_INHERITANCE_MAGIC, _('Inherit the template of the nearest ancestor')))
     return templates
 
 
@@ -253,16 +260,27 @@ COMPLEX = {
     'UNIHANDECODE_HOST': get_unihandecode_host,
     'CMS_TOOLBAR_URL__EDIT_ON': get_toolbar_url__edit_on,
     'CMS_TOOLBAR_URL__EDIT_OFF': get_toolbar_url__edit_off,
-    'CMS_TOOLBAR_URL__BUILD': get_toolbar_url__build,
+    'CMS_TOOLBAR_URL__BUILD': get_toolbar_url__structure,
     'CMS_TOOLBAR_URL__DISABLE': get_toolbar_url__disable,
+}
+
+DEPRECATED_CMS_SETTINGS = {
+    # Old CMS_WIZARD_* settings to be removed in v3.5.0
+    'PAGE_WIZARD_DEFAULT_TEMPLATE': 'WIZARD_DEFAULT_TEMPLATE',
+    'PAGE_WIZARD_CONTENT_PLUGIN': 'WIZARD_CONTENT_PLUGIN',
+    'PAGE_WIZARD_CONTENT_PLUGIN_BODY': 'WIZARD_CONTENT_PLUGIN_BODY',
+    'PAGE_WIZARD_CONTENT_PLACEHOLDER': 'WIZARD_CONTENT_PLACEHOLDER',
 }
 
 
 def get_cms_setting(name):
     if name in COMPLEX:
         return COMPLEX[name]()
-    else:
-        return getattr(settings, 'CMS_%s' % name, DEFAULTS[name])
+    elif name in DEPRECATED_CMS_SETTINGS:
+        new_setting = 'CMS_%s' % name
+        old_setting = 'CMS_%s' % DEPRECATED_CMS_SETTINGS[name]
+        return getattr(settings, new_setting, getattr(settings, old_setting, DEFAULTS[name]))
+    return getattr(settings, 'CMS_%s' % name, DEFAULTS[name])
 
 
 def get_site_id(site):

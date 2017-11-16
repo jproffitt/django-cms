@@ -1,8 +1,8 @@
 .. _contributing-documentation:
 
-**************************
+##########################
 Contributing documentation
-**************************
+##########################
 
 Perhaps considered "boring" by hard-core coders, documentation is sometimes even
 more important than code! This is what brings fresh blood to a project, and
@@ -10,6 +10,9 @@ serves as a reference for old timers. On top of this, documentation is the one
 area where less technical people can help most - you just need to write
 simple, unfussy English. Elegance of style is a secondary consideration, and
 your prose can be improved later if necessary.
+
+Contributions to the documentation earn the greatest respect from the
+core developers and the django CMS community.
 
 Documentation should be:
 
@@ -23,29 +26,133 @@ Documentation should be:
 
 Merging documentation is pretty fast and painless.
 
-Also, contributing to the documentation will earn you great respect from the
-core developers. You get good karma just like a test contributor, but you get
-double cookie points. Seriously. You rock.
-
 Except for the tiniest of change, we recommend that you test them before
-submitting. Follow the same steps above to fork and clone the project locally.
-Next, create a virtualenv so you can install the documentation tools::
+submitting.
 
-    virtualenv djcms-docs-env
-    source djcms-docs-env/bin/activate
-    pip install sphinx sphinx_rtd_theme
 
-Now you can ``cd`` into the ``django-cms/docs`` directory and build the documentation::
+**************************
+Building the documentation
+**************************
 
-    make html
-    open build/html/index.html
+Follow the same steps above to fork and clone the project locally. Next, ``cd`` into the
+``django-cms/docs`` and install the requirements::
 
-This allows you to review your changes in your local browser. After each
-change, be sure to rebuild the docs using ``make html``. If everything looks
-good, then it's time to push your changes to Github and open a pull request.
+    make install
 
+Now you can test and run the documentation locally using::
+
+    make run
+
+This allows you to review your changes in your local browser using ``http://localhost:8001/``.
+
+.. note:: **What this does**
+
+    ``make install`` is roughly the equivalent of::
+
+        virtualenv env
+        source env/bin/activate
+        pip install -r requirements.txt
+        cd docs
+        make html
+
+    ``make run`` runs ``make html``, and serves the built documentation on port 8001 (that is, at
+    ``http://localhost:8001/``.
+
+    It then watches the ``docs`` directory; when it spots changes, it will automatically rebuild
+    the documentation, and refresh the page in your browser.
+
+
+.. _spelling:
+
+********
+Spelling
+********
+
+We use `sphinxcontrib-spelling <https://pypi.python.org/pypi/sphinxcontrib-spelling/>`_, which in
+turn uses `pyenchant <https://pypi.python.org/pypi/pyenchant/>`_ and `enchant
+<http://www.abisource.com/projects/enchant/>`_ to check the spelling of the documentation.
+
+You need to check your spelling before submitting documentation.
+
+.. important::
+
+    We use British English rather than US English spellings. This means that we use *colour*
+    rather than *color*, *emphasise* rather than *emphasize* and so on.
+
+
+Install the spelling software
+=============================
+
+``sphinxcontrib-spelling`` and ``pyenchant`` are Python packages that will be installed in the
+virtualenv ``docs/env`` when you run ``make install`` (see above).
+
+You will need to have ``enchant`` installed too, if it is not already. The easy way to check is to
+run ``make spelling`` from the ``docs`` directory. If it runs successfully, you don't need to do
+anything, but if not you will have to install ``enchant`` for your system. For example, on OS X::
+
+    brew install enchant
+
+or Debian Linux::
+
+    apt-get install enchant
+
+
+Check spelling
+==============
+
+Run::
+
+    make spelling
+
+in the ``docs`` directory to conduct the checks.
+
+.. note::
+
+    This script expects to find a virtualenv at ``docs/env``, as installed by ``make install`` (see
+    above).
+
+If no spelling errors have been detected, ``make spelling`` will report::
+
+    build succeeded.
+
+Otherwise::
+
+    build finished with problems.
+    make: *** [spelling] Error 1
+
+It will list any errors in your shell. Misspelt words will be also be listed in
+``build/spelling/output.txt``
+
+Words that are not in the built-in dictionary can be added to ``docs/spelling_wordlist``. **If**
+you are certain that a word is incorrectly flagged as misspelt, add it to the ``spelling_wordlist``
+document, in alphabetical order. **Please do not add new words unless you are sure they should be
+in there.**
+
+If you find technical terms are being flagged, please check that you have capitalised them
+correctly - ``javascript`` and ``css`` are **incorrect** spellings for example. Commands and
+special names (of classes, modules, etc) in double backticks - `````` - will mean that they are not
+caught by the spelling checker.
+
+.. important::
+
+    You may well find that some words that pass the spelling test on one system but not on another.
+    Dictionaries on different systems contain different words and even behave differently. The
+    important thing is that the spelling tests pass on `Travis
+    <https://travis-ci.org/divio/django-cms>`_ when you submit a pull request.
+
+
+*********************
+Making a pull request
+*********************
+
+Before you commit any changes, you need to check spellings with ``make spelling`` and rebuild the
+docs using ``make html``. If everything looks good, then it's time to push your changes to GitHub
+and open a pull request in the usual way.
+
+
+***********************
 Documentation structure
-=======================
+***********************
 
 Our documentation is divided into the following main sections:
 
@@ -62,11 +169,12 @@ Our documentation is divided into the following main sections:
   CMS
 
 
+********************
 Documentation markup
-====================
+********************
 
 Sections
---------
+========
 
 We mostly follow the Python documentation conventions for section marking::
 
@@ -90,8 +198,9 @@ We mostly follow the Python documentation conventions for section marking::
     sub-sub-sub-sub-heading
     """""""""""""""""""""""
 
+
 Inline markup
--------------
+=============
 
 * use backticks - `````` - for:
     * literals::
@@ -122,10 +231,12 @@ Inline markup
 * use strong emphasis - ``**`` - around:
     * buttons that perform an action::
 
-        Hit **Save as draft**.
+        Hit **View published** or **Save as draft**.
+
+
 
 Rules for using technical words
--------------------------------
+===============================
 
 There should be one consistent way of rendering any technical word, depending on its context.
 Please follow these rules:
@@ -139,8 +250,9 @@ Please follow these rules:
   "``Placeholder`` methods can be overwritten as required" - when appropriate, link the term to
   further reference documentation as well as simply highlighting it.
 
+
 References
-----------
+==========
 
 Create::
 
@@ -159,4 +271,4 @@ run search-and-replaces when items are moved in the structure.
 
 
 .. _restructuredText: http://docutils.sourceforge.net/docs/ref/rst/introduction.html
-.. _Sphinx: http://sphinx.pocoo.org/
+.. _Sphinx: http://sphinx-doc.org//

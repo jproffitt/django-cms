@@ -1,6 +1,9 @@
 from cms.admin.placeholderadmin import PlaceholderAdminMixin, FrontendEditableAdminMixin
-from cms.test_utils.project.placeholderapp.models import (Example1, MultilingualExample1,
-                                                          TwoPlaceholderExample, CharPksExample)
+from cms.test_utils.project.placeholderapp.models import (
+    Example1, MultilingualExample1,
+    TwoPlaceholderExample, CharPksExample
+)
+
 from django.contrib import admin
 from hvad.admin import TranslatableAdmin
 

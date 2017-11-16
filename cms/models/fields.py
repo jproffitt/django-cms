@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 from cms.forms.fields import PageSelectFormField
 from cms.models.placeholdermodel import Placeholder
-from cms.utils.placeholder import PlaceholderNoAction, validate_placeholder_name
 from django.db import models
 
 
 class PlaceholderField(models.ForeignKey):
 
-    def __init__(self, slotname, default_width=None, actions=PlaceholderNoAction, **kwargs):
+    def __init__(self, slotname, default_width=None, actions=None, **kwargs):
+        from cms.utils.placeholder import PlaceholderNoAction, validate_placeholder_name
+
+        if not actions:
+            actions = PlaceholderNoAction
+
         if kwargs.get('related_name', None) == '+':
             raise ValueError("PlaceholderField does not support disabling of related names via '+'.")
         if not callable(slotname):
@@ -31,6 +35,8 @@ class PlaceholderField(models.ForeignKey):
         return Placeholder.objects.create(slot=self._get_placeholder_slot(instance), default_width=self.default_width)
 
     def _get_placeholder_slot(self, model_instance):
+        from cms.utils.placeholder import validate_placeholder_name
+
         if callable(self.slotname):
             slotname = self.slotname(model_instance)
             validate_placeholder_name(slotname)
@@ -58,15 +64,6 @@ class PlaceholderField(models.ForeignKey):
             data = self._get_new_placeholder(instance)
         super(PlaceholderField, self).save_form_data(instance, data)
 
-    def south_field_triple(self):
-        "Returns a suitable description of this field for South."
-        # We'll just introspect ourselves, since we inherit.
-        from south.modelsinspector import introspector
-        field_class = "django.db.models.fields.related.ForeignKey"
-        args, kwargs = introspector(self)
-        # That's our definition!
-        return (field_class, args, kwargs)
-
     def contribute_to_class(self, cls, name):
         super(PlaceholderField, self).contribute_to_class(cls, name)
         if not hasattr(cls._meta, 'placeholder_field_names'):
@@ -93,10 +90,3 @@ class PageField(models.ForeignKey):
         }
         defaults.update(kwargs)
         return super(PageField, self).formfield(**defaults)
-
-    def south_field_triple(self):
-        "Returns a suitable description of this field for South."
-        from south.modelsinspector import introspector
-        field_class = "django.db.models.fields.related.ForeignKey"
-        args, kwargs = introspector(self)
-        return (field_class, args, kwargs)

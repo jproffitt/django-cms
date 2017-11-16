@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import with_statement
-
 from django.template import Template
 
 from cms.api import create_page
 from cms.models import Page
-from cms.test_utils.testcases import CMSTestCase, ClearURLs
+from cms.test_utils.testcases import CMSTestCase
 from cms.templatetags.cms_admin import preview_link
 from cms.utils.i18n import force_language
 from django.test.utils import override_settings
@@ -13,7 +11,7 @@ from menus.base import NavigationNode
 
 
 @override_settings(ROOT_URLCONF='cms.test_utils.project.nonroot_urls')
-class NonRootCase(ClearURLs, CMSTestCase):
+class NonRootCase(CMSTestCase):
     def setUp(self):
         u = self._create_user("test", True, True)
 
@@ -30,8 +28,13 @@ class NonRootCase(ClearURLs, CMSTestCase):
         + P4
 
         """
-        self.page1 = create_page("page1", "nav_playground.html", "en",
-                                 published=True, in_navigation=True)
+        self.page1 = self.create_homepage(
+            title="page1",
+            template="nav_playground.html",
+            language="en",
+            published=True,
+            in_navigation=True,
+        )
         self.page2 = create_page("page2", "nav_playground.html", "en",
                           parent=self.page1, published=True, in_navigation=True)
         self.page3 = create_page("page3", "nav_playground.html", "en",
@@ -61,7 +64,7 @@ class NonRootCase(ClearURLs, CMSTestCase):
 
     def test_show_breadcrumb(self):
         page2 = Page.objects.get(pk=self.page2.pk)
-        context = self.get_context(path=self.page2.get_absolute_url())
+        context = self.get_context(path=self.page2.get_absolute_url(), page=self.page2.publisher_public)
         tpl = Template("{% load menu_tags %}{% show_breadcrumb %}")
         tpl.render(context)
         nodes = context['ancestors']

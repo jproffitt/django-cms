@@ -3,6 +3,7 @@ import sys
 from contextlib import contextmanager
 from shutil import rmtree as _rmtree
 from tempfile import template, mkdtemp, _exists
+from cms.apphook_pool import apphook_pool
 
 from django.contrib.auth import get_user_model
 from django.utils.six.moves import StringIO
@@ -130,3 +131,44 @@ def disable_logger(logger):
     logger.disabled = True
     yield
     logger.disabled = old
+
+
+@contextmanager
+def apphooks(*hooks):
+    _apphooks = apphook_pool.apphooks
+    _apps = apphook_pool.apps
+    _discovered = apphook_pool.discovered
+    apphook_pool.clear()
+    for hook in hooks:
+        apphook_pool.register(hook)
+    try:
+        yield
+    finally:
+        apphook_pool.apphooks = _apphooks
+        apphook_pool.apps = _apps
+        apphook_pool.discovered = _discovered
+
+
+@contextmanager
+def signal_tester(*signals):
+    env = SignalTester()
+
+    for signal in signals:
+        signal.connect(env, weak=True)
+
+    try:
+        yield env
+    finally:
+        for signal in signals:
+            signal.disconnect(env, weak=True)
+
+
+class SignalTester(object):
+
+    def __init__(self):
+        self.call_count = 0
+        self.calls = []
+
+    def __call__(self, *args, **kwargs):
+        self.call_count += 1
+        self.calls.append((args, kwargs))

@@ -5,7 +5,9 @@ from django.utils.encoding import smart_str
 class Menu(object):
     namespace = None
 
-    def __init__(self):
+    def __init__(self, renderer):
+        self.renderer = renderer
+
         if not self.namespace:
             self.namespace = self.__class__.__name__
 
@@ -18,11 +20,19 @@ class Menu(object):
 
 class Modifier(object):
 
+    def __init__(self, renderer):
+        self.renderer = renderer
+
     def modify(self, request, nodes, namespace, root_id, post_cut, breadcrumb):
         pass
 
 
 class NavigationNode(object):
+
+    selected = None
+    sibling = False
+    ancestor = False
+    descendant = False
 
     def __init__(self, title, url, id, parent_id=None, parent_namespace=None,
                  attr=None, visible=True):
@@ -57,3 +67,7 @@ class NavigationNode(object):
             return [self.parent] + self.parent.get_ancestors()
         else:
             return []
+
+    def is_selected(self, request):
+        node_abs_url = self.get_absolute_url()
+        return node_abs_url == request.path

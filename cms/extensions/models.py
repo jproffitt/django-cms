@@ -1,3 +1,5 @@
+from django.db.models import ManyToManyField
+
 from cms.constants import PUBLISHER_STATE_DIRTY
 from django.db import models
 
@@ -23,6 +25,15 @@ class BaseExtension(models.Model):
         """
         pass
 
+    @classmethod
+    def _get_related_objects(cls):
+        fields = cls._meta._get_fields(
+            forward=False, reverse=True,
+            include_parents=True,
+            include_hidden=False,
+        )
+        return list(obj for obj in fields if not isinstance(obj.field, ManyToManyField))
+
     def copy(self, target, language):
         """
         This method copies this extension to an unrelated-target. If you intend
@@ -33,6 +44,12 @@ class BaseExtension(models.Model):
         clone.pk = None
         clone.public_extension = None
         clone.extended_object = target  # set the new public object
+
+        # Nullify all concrete parent primary keys. See issue #5494
+        for parent, field in clone._meta.parents.items():
+            if field:
+                setattr(clone, parent._meta.pk.attname, None)
+
         clone.save(mark_page=False)
 
         # If the target we're copying already has a publisher counterpart, then
@@ -64,8 +81,19 @@ class BaseExtension(models.Model):
         if public_extension:
             this.pk = public_extension.pk  # overwrite current public extension
             this.public_extension = None  # remove public extension or it will point to itself and raise duplicate entry
+
+            # Set public_extension concrete parents PKs. See issue #5494
+            for parent, field in this._meta.parents.items():
+                if field:
+                    setattr(this, parent._meta.pk.attname, getattr(public_extension, parent._meta.pk.attname))
         else:
             this.pk = None  # create new public extension
+
+            # Nullify all concrete parent primary keys. See issue #5494
+            for parent, field in this._meta.parents.items():
+                if field:
+                    setattr(this, parent._meta.pk.attname, None)
+
             this.save(mark_page=False)
             self.public_extension = this
             self.save(mark_page=False)

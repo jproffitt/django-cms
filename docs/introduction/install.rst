@@ -8,7 +8,7 @@ We'll get started by setting up our environment.
 Requirements
 ************
 
-django CMS requires Django version 1.6.9 or later, 1.7 or 1.8, and Python 2.6, 2.7, 3.3 or 3.4.
+django CMS requires Django 1.8, 1.9 or 1.10 and Python 2.7, 3.3 or 3.4.
 
 ************************
 Your working environment
@@ -30,6 +30,15 @@ Note that if you're using Windows, to activate the virtualenv you'll need::
 
     env\Scripts\activate
 
+
+Update pip
+==========
+
+``pip`` is the Python installer. Make sure yours is up-to-date, as earlier versions can be less reliable::
+
+	pip install --upgrade pip
+
+
 Use the django CMS installer
 ============================
 
@@ -42,7 +51,7 @@ Install it::
 
 This provides you with a new command, ``djangocms``.
 
-Create a new directory to work in, and cd into it::
+Create a new directory to work in, and ``cd`` into it::
 
     mkdir tutorial-project
     cd tutorial-project
@@ -51,12 +60,19 @@ Run it to create a new Django project called ``mysite``::
 
     djangocms -f -p . mysite
 
-.. note::
-   The ``-f`` flag tells the installer to install and configure Django Filer, a useful application
-   for managing files and processing images. Although it's not required for django CMS itself, a
-   vast number of django CMS addons use it, and nearly all django CMS projects have it installed.
-   If you know you won't need it, omit the flag. See the `django CMS installer documentation for
-   more information <http://djangocms-installer.readthedocs.org>`_.
+This means:
+
+* run the django CMS installer
+* install Django Filer too (``-f``) - **required for this tutorial**
+* use the current directory as the parent of the new project directory (``-p .``)
+* call the new project directory ``mysite``
+
+.. note:: **About Django Filer**
+
+   Django Filer, a useful application for managing files and processing images. Although it's not
+   required for django CMS itself, a vast number of django CMS addons use it, and nearly all django
+   CMS projects have it installed. If you know you won't need it, omit the flag. See the `django
+   CMS installer documentation for more information <https://djangocms-installer.readthedocs.io>`_.
 
 
 .. warning::
@@ -70,33 +86,17 @@ Windows users may need to do a little extra to make sure Python files are associ
     assoc .py=Python.file
     ftype Python.File="C:\Users\Username\workspace\demo\env\Scripts\python.exe" "%1" %*
 
+By default, the installer runs in `Batch mode
+<https://djangocms-installer.readthedocs.io/en/latest/usage.html#batch-mode-default>`_, and sets up your new project
+with some default values.
 
-For the purposes of this tutorial, it's recommended that you answer the
-installer's questions as follows - where our suggestions differ from the
-default, they're highlighted below:
+Later, you may wish to manage some of these yourself, in which case you need to run it in `Wizard mode
+<https://djangocms-installer.readthedocs.io/en/latest/usage.html#wizard-mode>`_. The default in *Batch mode* is to set
+up an English-only project, which will be sufficient for the purposes of this tutorial. You can of course simply edit
+the new project's ``settings.py`` file at any time to change or add site languages or amend other settings.
 
-.. warning:: Django security support
+The installer creates an admin user for you, with username/password ``admin``/``admin``.
 
-    Django 1.6 support is provided as an interim measure only. In accordance with the `Django
-    Project's security policies <https://docs.djangoproject.com/en/dev/internals/security/>`_, 1.6
-    no longer receives security updates from the Django Project team. Projects running on Django
-    1.6 have known vulnerabilities, so don't choose to install this version unless you have a
-    particular need to.
-
-* Database configuration (in URL format): sqlite://localhost/project.db
-* django CMS version: stable
-* Django version: stable
-* Activate Django I18N / L10N setting: yes
-* Install and configure reversion support: yes
-* Languages to enable. Option can be provided multiple times, or as a comma separated list: **en, de**
-* Optional default time zone: America/Chicago:
-* Activate Django timezone support: yes
-* Activate CMS permission management: yes
-* Use Twitter Bootstrap Theme: **yes**
-* Use custom template set: no
-* Load a starting page with examples after installation: **yes**
-
-Create a Django admin user when invited.
 
 Start up the runserver
 ======================
@@ -108,17 +108,15 @@ Start up the runserver
 Open http://localhost:8000/ in your browser, where you should be presented with
 your brand new django CMS homepage.
 
-Congratulations, you now have installed a fully functional CMS!
+.. image:: /introduction/images/welcome.png
+   :alt: a django CMS home page
+   :width: 400
+   :align: center
+
+Congratulations, you now have installed a fully functional CMS.
 
 To log in, append ``?edit`` to the URL and hit enter. This will enable the
-toolbar, from where you can log in and manage your website. Switch to ``Draft``
-mode to add and edit content.
+toolbar, from where you can log in and manage your website.
 
-Try to switch between ``Live`` and ``Draft`` view, between ``Structure`` and
-``Content`` mode, add plugins, move them around and delete them again.
-
-To add a *Text* or or other plugin elements to a placeholder:
-
-#.  switch to ``Structure`` mode
-#.  select the menu icon on the placeholder's title bar
-#.  select a plugin type to add
+If you are not already familiar with django CMS, take a few minutes to run through the basics of
+the :ref:`django CMS tutorial for users <user-tutorial>`.

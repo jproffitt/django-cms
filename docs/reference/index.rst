@@ -1,3 +1,5 @@
+.. _reference:
+
 #########
 Reference
 #########
@@ -5,12 +7,19 @@ Reference
 Technical reference material.
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    configuration
-    navigation
-    plugins
     api_references
-    fields
-    templatetags
     cli
+    configuration
+    fields
+    navigation
+    pages
+    permissions
+    placeholders
+    plugins
+    sitemaps
+    templatetags
+    titles
+    toolbar
+    wizards

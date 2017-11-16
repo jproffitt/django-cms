@@ -1,22 +1,24 @@
-############################
-Placeholders outside the CMS
-############################
+.. _placeholders_outside_cms:
+
+#######################################
+How to use placeholders outside the CMS
+#######################################
 
 Placeholders are special model fields that django CMS uses to render
 user-editable content (plugins) in templates. That is, it's the place where a
 user can add text, video or any other plugin to a webpage, using the same
 frontend editing as the CMS pages.
 
-Placeholders can be viewed as containers for :class:`CMSPlugin` instances, and
+Placeholders can be viewed as containers for :class:`~cms.models.pluginmodel.CMSPlugin` instances, and
 can be used outside the CMS in custom applications using the
 :class:`~cms.models.fields.PlaceholderField`.
 
 By defining one (or several) :class:`~cms.models.fields.PlaceholderField` on a
-custom model you can take advantage of the full power of :class:`CMSPlugin`.
+custom model you can take advantage of the full power of :class:`~cms.models.pluginmodel.CMSPlugin`.
 
-**********
-Quickstart
-**********
+***********
+Get started
+***********
 
 You need to define a :class:`~cms.models.fields.PlaceholderField` on the model you would like to
 use::
@@ -69,7 +71,7 @@ Admin Integration
 Your model with ``PlaceholderFields`` can still be edited in the admin. However, any
 PlaceholderFields in it will **only be available for editing from the frontend**.
 ``PlaceholderFields`` **must** not be present in any ``fieldsets``, ``fields``, ``form`` or other
-modeladmin field's definition attribute.
+``ModelAdmin`` field's definition attribute.
 
 To provide admin support for a model with a ``PlaceholderField`` in your application's admin, you
 need to use the mixin :class:`~cms.admin.placeholderadmin.PlaceholderAdminMixin` along with the
@@ -107,7 +109,7 @@ translated fields::
         def __unicode__(self):
             return self.title
 
-Be sure to combine both hvad's :class:`TranslatableAdmin` and :class:`~cms.admin.placeholderadmin.PlaceholderAdminMixin` when
+Be sure to combine both hvad's ``TranslatableAdmin`` and :class:`~cms.admin.placeholderadmin.PlaceholderAdminMixin` when
 registering your model with the admin site::
 
     from cms.admin.placeholderadmin import PlaceholderAdminMixin
@@ -140,18 +142,16 @@ The :ttag:`render_placeholder` tag takes the following parameters:
   specified language (optional)
 
 The view in which you render your placeholder field must return the
-:attr:`request <django.http.HttpRequest>` object in the context. This is
-typically achieved in Django applications by using :class:`RequestContext`::
+:class:`request <django.http.HttpRequest>` object in the context. This is
+typically achieved in Django applications by using :class:`~django.template.RequestContext`::
 
-    from django.shortcuts import get_object_or_404, render_to_response
-    from django.template.context import RequestContext
-    from myapp.models import MyModel
+    from django.shortcuts import get_object_or_404, render
 
     def my_model_detail(request, id):
         object = get_object_or_404(MyModel, id=id)
-        return render_to_response('my_model_detail.html', {
+        return render(request, 'my_model_detail.html', {
             'object': object,
-        }, context_instance=RequestContext(request))
+        })
 
 If you want to render plugins from a specific language, you can use the tag
 like this:
@@ -208,16 +208,16 @@ that specific instance of that model. Required permissions for edit actions are:
 
 * to ``add``: require ``add`` **or** ``change`` permission on related Model or instance.
 * to ``change``: require ``add`` **or** ``change`` permission on related Model or instance.
-* to ``delete``: require ``add`` **or** ``change`` **or** ``delete`` permission on related Model 
+* to ``delete``: require ``add`` **or** ``change`` **or** ``delete`` permission on related Model
   or instance.
 
-With this logic, an user who can ``change`` a Model's instance but can not ``add`` a new 
+With this logic, an user who can ``change`` a Model's instance but can not ``add`` a new
 Model's instance will be able to add some placeholders or plugins to existing Model's instances.
 
-Model permissions are usually added through the default Django auth application and its admin
-interface. Object-level permission can be handled by writing a custom Auth Backend as described in
-`django docs
-<https://docs.djangoproject.com/en/1.7/topics/auth/customizing/#handling-object-permissions>`_
+Model permissions are usually added through the default Django ``auth`` application and its admin
+interface. Object-level permission can be handled by writing a custom authentication backend as
+described in `django docs
+<https://docs.djangoproject.com/en/stable/topics/auth/customizing/#handling-object-permissions>`_
 
 For example, if there is a ``UserProfile`` model that contains a ``PlaceholderField`` then the
 custom backend can refer to a ``has_perm`` method (on the model) that grants all rights to current

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import datetime
 
-from django.utils.translation import get_language
+from django.utils.translation import LANGUAGE_SESSION_KEY, get_language
 from django.conf import settings
 
-from cms.utils.compat.dj import LANGUAGE_SESSION_KEY
+from cms.utils.compat.dj import MiddlewareMixin
 
 
-class LanguageCookieMiddleware(object):
+class LanguageCookieMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         language = get_language()
         if hasattr(request, 'session'):

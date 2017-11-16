@@ -31,7 +31,7 @@ with django CMS
 Updates to ``settings.py``
 **************************
 
-The following changes will need to be made in your settings.py file::
+The following changes will need to be made in your ``settings.py`` file::
 
     ADMIN_MEDIA_PREFIX = '/static/admin'
     STATIC_ROOT = os.path.join(PROJECT_PATH, 'static')
@@ -45,18 +45,18 @@ The following changes will need to be made in your settings.py file::
 
 .. note::
 
-    Please make sure the ``static`` subfolder exists in your
-    project and is writable.
+    Please make sure the ``static`` sub-folder exists in your
+    project and is writeable.
 
 .. note::
 
-    PROJECT_PATH is the absolute path to your project.  See :ref:`configure-django-cms` for instructions on how to set PROJECT_PATH.
+    PROJECT_PATH is the absolute path to your project.
 
-**Remove** the following from :setting:`django:TEMPLATE_CONTEXT_PROCESSORS`::
+**Remove** the following from ``TEMPLATE_CONTEXT_PROCESSORS``:
 
     django.core.context_processors.auth
 
-**Add** the following to :setting:`django:TEMPLATE_CONTEXT_PROCESSORS`::
+**Add** the following to ``TEMPLATE_CONTEXT_PROCESSORS``::
 
     django.contrib.auth.context_processors.auth
     django.core.context_processors.static

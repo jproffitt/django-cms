@@ -14,19 +14,30 @@ CLASSIFIERS = [
     'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     'Topic :: Software Development',
     'Topic :: Software Development :: Libraries :: Application Frameworks',
-    'Programming Language :: Python :: 2.6',
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3.3',
     'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
     'Framework :: Django',
-    'Framework :: Django :: 1.6',
-    'Framework :: Django :: 1.7',
     'Framework :: Django :: 1.8',
+    'Framework :: Django :: 1.9',
+    'Framework :: Django :: 1.10',
+    'Framework :: Django :: 1.11',
+]
+
+INSTALL_REQUIREMENTS = [
+    'Django>=1.8,<2.0',
+    'django-classy-tags>=0.7.2',
+    'django-formtools>=1.0',
+    'django-treebeard>=4.0.1',
+    'django-sekizai>=0.7',
+    'djangocms-admin-style>=1.0',
 ]
 
 setup(
-    author='Patrick Lauber',
-    author_email='digi@treepy.com',
+    author='Divio AG and contributors',
+    author_email='info@divio.ch',
     name='django-cms',
     version=cms.__version__,
     description='An Advanced Django CMS',
@@ -35,17 +46,7 @@ setup(
     license='BSD License',
     platforms=['OS Independent'],
     classifiers=CLASSIFIERS,
-    install_requires=[
-        'Django>=1.6.9,<1.9',
-        'django-classy-tags>=0.5',
-        'html5lib>=0.90,!=0.9999,!=0.99999',
-        'django-treebeard==3.0',
-        'django-sekizai>=0.7',
-        'djangocms-admin-style'
-    ],
-    extras_require={
-        'south': ['south>=1.0.0'],
-    },
+    install_requires=INSTALL_REQUIREMENTS,
     packages=find_packages(exclude=['project', 'project.*']),
     include_package_data=True,
     zip_safe=False,

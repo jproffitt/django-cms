@@ -7,10 +7,20 @@ from django.utils.encoding import force_text
 from django.utils.http import urlencode
 from django.utils.six.moves.urllib.parse import urlparse
 
+import cms
+
 from cms.utils.conf import get_cms_setting
 
 # checks validity of absolute / relative url
 any_path_re = re.compile('^/?[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*/?$')
+
+# checks validity of relative url
+# matches the following:
+# /test
+# /test/
+# ./test/
+# ../test/
+relative_url_regex = re.compile(r'^[^/<>]+/[^/<>].*$|^/[^/<>]*.*$', re.IGNORECASE)
 
 
 def levelize_path(path):
@@ -58,6 +68,15 @@ def is_media_request(request):
     return False
 
 
+def static_with_version(path):
+    """
+    Changes provided path from `path/to/filename.ext` to `path/to/$CMS_VERSION/filename.ext`
+    """
+    path_re = re.compile('(.*)/([^/]*$)')
+
+    return re.sub(path_re, r'\1/%s/\2' % (cms.__version__), path)
+
+
 def add_url_parameters(url, *args, **params):
     """
     adds parameters to an url -> url?p1=v1&p2=v2...
@@ -87,6 +106,5 @@ def admin_reverse(viewname, urlconf=None, args=None, kwargs=None, prefix=None,
         urlconf=urlconf,
         args=args,
         kwargs=kwargs,
-        prefix=prefix,
         current_app=current_app
     )

@@ -2,6 +2,7 @@
 import warnings
 
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.translation import ugettext as _
 
 from cms.app_base import CMSApp
 from cms.exceptions import AppAlreadyRegistered
@@ -26,11 +27,6 @@ class ApphookPool(object):
         # allow use as a decorator
         if app is None:
             return lambda app: self.register(app, discovering_apps)
-
-        if app.__module__.split('.')[-1] == 'cms_app':
-            warnings.warn('cms_app.py filename is deprecated, '
-                          'and it will be removed in version 3.4; '
-                          'please rename it to cms_apps.py', DeprecationWarning)
 
         if self.apphooks and not discovering_apps:
             return app
@@ -63,8 +59,6 @@ class ApphookPool(object):
                     pass
 
         else:
-            # FIXME: Remove in 3.4
-            load('cms_app')
             load('cms_apps')
 
         self.discovered = True
@@ -78,7 +72,7 @@ class ApphookPool(object):
         for app_name in self.apps:
             app = self.apps[app_name]
 
-            if app.urls:
+            if app.get_urls():
                 hooks.append((app_name, app.name))
 
         # Unfortunately, we lose the ordering since we now have a list of
@@ -97,10 +91,11 @@ class ApphookPool(object):
             # deprecated: return apphooks registered in db with urlconf name
             # instead of apphook class name
             for app in self.apps.values():
-                if app_name in app.urls:
+                if app_name in app.get_urls():
                     return app
 
-        raise ImproperlyConfigured('No registered apphook %r found' % app_name)
+        warnings.warn(_('No registered apphook "%r" found') % app_name)
+        return None
 
 
 apphook_pool = ApphookPool()

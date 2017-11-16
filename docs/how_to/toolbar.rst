@@ -1,6 +1,8 @@
-#####################
-Extending the Toolbar
-#####################
+.. _toolbar_how_to:
+
+#########################
+How to extend the Toolbar
+#########################
 
 .. versionadded:: 3.0
 
@@ -9,6 +11,13 @@ mode into your application, and provide your users with a streamlined editing ex
 
 For the toolbar API reference, please refer to :ref:`toolbar-api-reference`.
 
+.. important:: **Overlay** and **sideframe**
+
+    Then django CMS *sideframe* has been replaced with an *overlay* mechanism. The API still refers
+    to the ``sideframe``, because it is invoked in the same way, and what has changed is merely the
+    behaviour in the user's browser.
+
+    In other words, *sideframe* and the *overlay* refer to different versions of the same thing.
 
 ***********
 Registering
@@ -24,10 +33,11 @@ automatically loaded as long :setting:`CMS_TOOLBARS` is not set (or is set to
 ``None``).
 
 If you use the automated way, your ``cms_toolbars.py`` file should contain
-classes that extend ``cms.toolbar_base.CMSToolbar`` and are registered using :meth:`cms.toolbar_pool.toolbar_pool.register`.
+classes that extend ``cms.toolbar_base.CMSToolbar`` and are registered using :meth:`~cms.toolbar_pool.ToolbarPool.register()`.
 The register function can be used as a decorator.
 
 These classes have four attributes:
+
 * ``toolbar`` (the toolbar object)
 * ``request`` (the current request)
 * ``is_current_app`` (a flag indicating whether the current request is handled by the same app as the function is in)
@@ -145,7 +155,7 @@ menus::
 
 
 If you wish to simply detect the presence of a menu without actually creating
-it, you can use :meth:`cms.toolbar.toolbar.CMSToolbar.get_menu`, which will
+it, you can use :meth:`~cms.toolbar.toolbar.CMSToolbar.get_menu()`, which will
 return the menu if it is present, or, if not, will return ``None``.
 
 
@@ -249,10 +259,10 @@ certain admin functions for managing office locations in a project::
             url = reverse('admin:offices_office_add')
             office_menu.add_modal_item(_('Add New Office'), url=url)
 
-            # Add a break in the submenus
+            # Add a break in the sub-menus
             office_menu.add_break()
 
-            # More submenus...
+            # More sub-menus...
             url = reverse('admin:offices_state_changelist')
             office_menu.add_sideframe_item(_('States List'), url=url)
 
@@ -301,7 +311,7 @@ website.
 For example, suppose you are viewing a blog entry, and the toolbar allows the blog slug or URL to
 be edited. The toolbar will watch the ``django.contrib.admin.models.LogEntry`` model and detect if
 you create or edit an object in the admin via modal or sideframe view. After the modal or sideframe
-closes it will redirect to the new url of the object.
+closes it will redirect to the new URL of the object.
 
 To set this behaviour manually you can set the ``request.toolbar.set_object()`` function on which you can set the current object.
 
@@ -338,9 +348,12 @@ Frontend
 ********
 
 The toolbar adds a class ``cms-ready`` to the **html** tag when ready. Additionally we add
-``cms-toolbar-expanded`` when the toolbar is visible (expanded).
+``cms-toolbar-expanded`` when the toolbar is fully expanded. We also add
+``cms-toolbar-expanding`` and ``cms-toolbar-collapsing`` classes while toolbar
+is animating.
 
 The toolbar also fires a JavaScript event called **cms-ready** on the document.
 You can listen to this event using jQuery::
 
     CMS.$(document).on('cms-ready', function () { ... });
+

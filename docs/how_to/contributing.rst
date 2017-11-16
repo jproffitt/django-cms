@@ -1,8 +1,8 @@
 ..  _contributing_patch:
 
-####################
-Contributing a patch
-####################
+#########################
+How to contribute a patch
+#########################
 
 .. note:: For more background on the material covered in this how-to section, see the
    :ref:`contributing-code` and :ref:`testing` sections of the documentation.
@@ -42,9 +42,9 @@ The basic workflow for a code contribution will typically run as follows:
 #. Install its dependencies::
 
     cd django-cms
-    pip install -r test_requirements/django-1.7.txt
+    pip install -r test_requirements/django-X.Y.txt
 
-   Replace ``1.7`` with whichever version of Django you want to work with.
+   Replace ``X.Y`` with whichever version of Django you want to work with.
 
 #. Create a new branch for your work::
 
@@ -53,7 +53,7 @@ The basic workflow for a code contribution will typically run as follows:
 #. Edit the django CMS codebase to implement the fix or feature.
 #. Run the test suite::
 
-    python develop.py test
+    python manage.py test
 
 #. Commit and push your code::
 
@@ -68,10 +68,7 @@ The basic workflow for a code contribution will typically run as follows:
 Target branches
 ===============
 
-The django CMS project will always have at least two active branches:
-
-* ``support/version.x`` which you should target if you're submitting a bugfix for ``version.x``
-* ``develop`` for new features and bugfixes for the next release
+See :ref:`branch_policy` for information about branch policy.
 
 
 *******************
@@ -84,9 +81,9 @@ integration tests.
 Depending on your contribution, you will write a mix of them.
 
 Let's start with something simple. We'll assume you have set up your environment correctly as
-`described above <start-contributing>`_.
+:ref:`described above <start-contributing>`.
 
-Let's say you want to test the behavior of the ``CMSPluginBase.render`` method:
+Let's say you want to test the behaviour of the ``CMSPluginBase.render`` method:
 
 .. code-block:: python
 
@@ -114,10 +111,10 @@ Let's try to run it:
 
 .. code-block:: bash
 
-    python develop.py test cms.SimplePluginTestCase
+    python manage.py test cms.tests.test_plugins.SimplePluginTestCase
 
 This will call the new test case class only and it's handy when creating new tests and iterating
-quickly throught the steps. A full test run (``python develop.py test``) is required before opening
+quickly through the steps. A full test run (``python manage.py test``) is required before opening
 a pull request.
 
 This is the output you'll get::
@@ -201,8 +198,8 @@ the instance argument can be ``None``.
 As you see, even a simple test like this assumes and uses many feature of the test utilities
 provided by django CMS. Before attempting to write a test, take your time to explore the content of
 ``cms.test_utils`` package and check the shipped templates, example applications and, most of all,
-the base testcases defined in ``cms.test_utils.testscases`` which provide *a lot* of useful methods
-to prepare the environment for our tests or to create useful test data.
+the base ``testcases`` defined in ``cms.test_utils.testscases`` which provide *a lot* of useful
+methods to prepare the environment for our tests or to create useful test data.
 
 ********************
 Submitting your code
@@ -222,6 +219,9 @@ Acceptance criteria
 Matching these criteria from the very beginning will help the core developers to be able
 to review your submission more quickly and efficiently and will increase the chances of making a
 successful pull request.
+
+Please see our :ref:`development_policies` for guidance on which branches to use, how to prepare pull requests and so
+on.
 
 Features
 --------
